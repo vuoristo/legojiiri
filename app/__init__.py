@@ -1,0 +1,1 @@
+"""LEGOJiiRi application package."""
