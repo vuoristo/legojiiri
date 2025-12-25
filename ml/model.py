@@ -36,8 +36,17 @@ class LegoModelManager:
     # Model helpers
     def _build_model(self, num_classes: int) -> nn.Module:
         # MobileNetV3-Small offers a good trade-off for CPU-bound inference.
-        weights = models.MobileNet_V3_Small_Weights.IMAGENET1K_V1
-        model = models.mobilenet_v3_small(weights=weights)
+        # Users might be offline, so we gracefully fall back to random weights
+        # if pretrained weights cannot be fetched from the internet.
+        try:
+            weights = models.MobileNet_V3_Small_Weights.IMAGENET1K_V1
+            model = models.mobilenet_v3_small(weights=weights)
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning(
+                "Could not load pretrained MobileNetV3-Small weights; falling back to random init: %s",
+                exc,
+            )
+            model = models.mobilenet_v3_small(weights=None)
         in_features = model.classifier[-1].in_features
         model.classifier[-1] = nn.Linear(in_features, num_classes)
         return model
